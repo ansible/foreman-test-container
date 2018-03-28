@@ -1,24 +1,6 @@
 #!/usr/bin/env python
 
-"""Foreman API v2 stub server.
-
-Create anything.foreman.yaml with this contents::
-
-    plugin: foreman
-    url: http://localhost:8080
-    user: ansible-reader
-    password: changeme
-    validate_certs: False
-
-Start this script::
-
-    $ ./flaskapp.py
-
-Run ansible-inventory to test::
-
-    $ ansible-inventory -vvvv -i anything.foreman.yaml --list
-
-"""
+"""Foreman API v2 stub server."""
 
 import glob
 import json
