@@ -69,4 +69,4 @@ def ping_heartbeat():
     return jsonify({"status": "ok", "response": "pong"})
 
 
-__name__ == '__main__' and app.run(host='0.0.0.0', port=int(os.getenv('PORT', 8080)), debug=DEBUG)
+__name__ == '__main__' and app.run(host='0.0.0.0', port=int(os.getenv('PORT', 8080)), threaded=True, debug=DEBUG)
