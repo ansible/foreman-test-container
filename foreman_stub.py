@@ -63,4 +63,10 @@ def get_hosts(hostid=None):
         return jsonify(resp)
 
 
+@app.route('/ping')
+@app.route('/heartbeat')
+def ping_heartbeat():
+    return jsonify({"status": "ok", "response": "pong"})
+
+
 __name__ == '__main__' and app.run(host='0.0.0.0', port=int(os.getenv('PORT', 8080)), debug=DEBUG)
