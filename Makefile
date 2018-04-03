@@ -1,5 +1,5 @@
 CONTAINER_NAME=foreman-stub
-IMAGE_NAME=foreman-simulator
+IMAGE_NAME=ansible/foreman-test-container
 
 .PHONY: all
 all: build
