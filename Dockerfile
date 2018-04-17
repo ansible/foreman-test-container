@@ -11,7 +11,7 @@ ADD foreman_stub.py .
 ADD fixtures fixtures
 ENV PYTHONPATH=.
 
-ADD LICENSE.md .
+ADD COPYING .
 
 EXPOSE 8080
 CMD ["python", "-m", "foreman_stub"]
