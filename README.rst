@@ -9,17 +9,6 @@ Prerequisites
 
     Scripts in this folder require Python 3.6+ runtime.
 
-Create ``anything.foreman.yaml`` with this contents:
-
-.. code:: yaml
-
-    plugin: foreman
-    url: http://localhost:8080
-    user: ansible-reader
-    password: changeme
-    validate_certs: False
-
-
 Sanitizing
 ~~~~~~~~~~
 
@@ -50,13 +39,3 @@ In docker (dev):
 .. code:: shell
 
     $ make dev
-
-
-Testing
-=======
-
-Run ansible-inventory to test:
-
-.. code:: shell
-
-    $ ansible-inventory -vvvv -i anything.foreman.yaml --list
