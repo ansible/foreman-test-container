@@ -54,8 +54,8 @@ def get_hosts(hostid=None):
     if hostid is not None:
         cache_key = f'{cache_key}/{hostid}'
 
+    resp = PAGECACHE[cache_key]
     try:
-        resp = PAGECACHE[cache_key]
         if not request.path.endswith('/facts'):
             resp = resp[pagenum]
     except KeyError:
