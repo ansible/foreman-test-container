@@ -55,10 +55,9 @@ def get_hosts(hostid=None):
         cache_key = f'{cache_key}/{hostid}'
 
     try:
-        if request.path.endswith('/facts'):
-            resp = PAGECACHE[cache_key]
-        else:
-            resp = PAGECACHE[cache_key][pagenum]
+        resp = PAGECACHE[cache_key]
+        if not request.path.endswith('/facts'):
+            resp = resp[pagenum]
     except KeyError:
         if DEBUG:
             import q; q/cache_key; q/pagenum; q/hostid
