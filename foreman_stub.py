@@ -45,6 +45,7 @@ def get_page_num():
 
 @app.route('/api/v2/hosts')
 @app.route('/api/v2/hosts/<hostid>')
+@app.route('/api/v2/hosts/<hostid>/facts')
 def get_hosts(hostid=None):
     """Render fixture contents from cache."""
     pagenum = get_page_num()
@@ -54,7 +55,10 @@ def get_hosts(hostid=None):
         cache_key = f'{cache_key}/{hostid}'
 
     try:
-        resp = PAGECACHE[cache_key][pagenum]
+        if request.path.endswith('/facts'):
+            resp = PAGECACHE[cache_key]
+        else:
+            resp = PAGECACHE[cache_key][pagenum]
     except KeyError:
         if DEBUG:
             import q; q/cache_key; q/pagenum; q/hostid
