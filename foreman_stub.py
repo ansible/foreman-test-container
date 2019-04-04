@@ -17,6 +17,7 @@ DEBUG = os.getenv('DEBUG', 'false').lower() not in ('false', '0', '', 'off')
 app = Flask(__name__)  # pylint: disable=invalid-name
 
 PAGECACHE = defaultdict(dict)
+REPORTS = []
 
 
 @app.before_first_request
@@ -108,6 +109,71 @@ def get_facts(hostid):
     }
 
     return jsonify(resp)
+
+
+@app.route('/api/v2/hosts/<hostid>/config_reports/last')
+def get_last_config_report(hostid):
+    """Return the last config report for a single host"""
+    host = find_host(hostid)
+
+    for report in reversed(REPORTS):
+        if report['host_name'] == host['name']:
+            return jsonify(report)
+
+    return abort(404)
+
+
+@app.route('/api/v2/config_reports')
+def get_config_reports():
+    """The config report listing API"""
+    page = get_page_num()
+    per_page = get_per_page()
+
+    start = (page - 1) * per_page
+    end = page * per_page
+    total = len(REPORTS)
+
+    resp = {
+        'total': total,
+        'subtotal': total,
+        'page': page,
+        'per_page': per_page,
+        'sort': {
+            'by': None,
+            'order': None,
+        },
+        'results': REPORTS[start:end],
+    }
+
+    return jsonify(resp)
+
+@app.route('/api/v2/config_reports', methods=['POST'])
+def create_config_report():
+    """The config report creation API"""
+    data = request.get_json()
+    try:
+        config_report = data['config_report']
+        reported_at = config_report['reported_at']
+
+        # Based on what Foreman 1.22 returns
+        statuses = ('applied', 'restarted', 'failed', 'failed_restarts', 'skipping', 'pending')
+        report = {
+            'metrics': config_report['metrics'],
+            'created_at': reported_at,
+            'updated_at': reported_at,
+            'id': len(REPORTS),
+            'host_id': 1,  # Not implemented
+            'host_name': config_report['host'],
+            'reported_at': reported_at,
+            'status': {key: config_report['status'].get(key, 0) for key in statuses},
+            'logs': config_report['logs'],
+            'summary': 'Success',
+        }
+    except KeyError:
+        abort(400)
+
+    REPORTS.append(report)
+    return jsonify(report), 201
 
 
 @app.route('/ping')
