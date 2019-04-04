@@ -18,7 +18,7 @@ if DEBUG:
     import pip
     pip.main(['install', 'q', 'epdb'])
 
-app = Flask(__name__)
+app = Flask(__name__)  # pylint: disable=invalid-name
 
 PAGECACHE = defaultdict(dict)
 
@@ -28,8 +28,8 @@ def build_pagecache():
     """Read JSON fixtures into in-memory cache."""
     jfiles = glob.glob('fixtures/*.json')
     for jfile in jfiles:
-        with open(jfile, 'r') as f:
-            jdata = json.load(f)
+        with open(jfile, 'r') as fixture:
+            jdata = json.load(fixture)
         key = urlparse(jdata['url']).path[7:]
         subkey = jdata['page']
         PAGECACHE[key][subkey] = jdata['data']
@@ -72,4 +72,5 @@ def ping_heartbeat():
     return jsonify({"status": "ok", "response": "pong"})
 
 
-__name__ == '__main__' and app.run(host='0.0.0.0', port=int(os.getenv('PORT', 8080)), threaded=True, debug=DEBUG)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', '8080')), threaded=True, debug=DEBUG)
