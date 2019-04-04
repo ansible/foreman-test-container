@@ -9,14 +9,10 @@ import os
 from collections import defaultdict
 from urllib.parse import urlparse
 
-from flask import Flask, jsonify, request
+from flask import Flask, abort, jsonify, request
 
 
 DEBUG = os.getenv('DEBUG', 'false').lower() not in ('false', '0', '', 'off')
-
-if DEBUG:
-    import pip
-    pip.main(['install', 'q', 'epdb'])
 
 app = Flask(__name__)  # pylint: disable=invalid-name
 
@@ -34,36 +30,84 @@ def build_pagecache():
         subkey = jdata['page']
         PAGECACHE[key][subkey] = jdata['data']
 
+        if 'id' in jdata['data'] and key == f"/hosts/{jdata['data']['id']}":
+            PAGECACHE[f"/hosts/{jdata['data']['name']}"][subkey] = jdata['data']
+
 
 def get_page_num():
-    """Return page number if present."""
-    pagenum = request.args.get('page')
-    if pagenum:
-        pagenum = int(pagenum)
-    return pagenum
+    """Return page number."""
+    return int(request.args.get('page') or 1)
+
+
+def get_per_page():
+    """Return the number of results per page."""
+    return int(request.args.get('per_page') or 20)
+
+
+def find_host(hostid):
+    """Find a single host by its hostid, which is a numeric ID or a hostname"""
+    try:
+        return PAGECACHE[f'/hosts/{hostid}'][1]
+    except KeyError:
+        abort(404)
 
 
 @app.route('/api/v2/hosts')
-@app.route('/api/v2/hosts/<hostid>')
-@app.route('/api/v2/hosts/<hostid>/facts')
-def get_hosts(hostid=None):
+def get_hosts():
     """Render fixture contents from cache."""
     pagenum = get_page_num()
+    resp = PAGECACHE['/hosts'][pagenum]
+    return jsonify(resp)
 
-    cache_key = '/hosts'
-    if hostid is not None:
-        cache_key = f'{cache_key}/{hostid}'
 
-    resp = PAGECACHE[cache_key]
-    try:
-        if not request.path.endswith('/facts'):
-            resp = resp[pagenum]
-    except KeyError:
-        if DEBUG:
-            import q; q/cache_key; q/pagenum; q/hostid
-            import epdb; epdb.st()
+@app.route('/api/v2/hosts/facts', methods=['POST'])
+def handle_facts():
+    """Create facts for hosts"""
+    data = request.get_json()
+
+    # Foreman can allow creating hosts that don't exist - we don't support this
+    host = find_host(data['name'])
+
+    if data['facts']['_type'] == 'ansible':
+        host['facts'] = data['facts']['ansible_facts']
     else:
-        return jsonify(resp)
+        abort(400)
+
+    return jsonify(host), 201
+
+
+@app.route('/api/v2/hosts/<hostid>')
+def get_host(hostid):
+    """Render fixture contents from cache."""
+    return jsonify(find_host(hostid))
+
+
+@app.route('/api/v2/hosts/<hostid>/facts')
+def get_facts(hostid):
+    """Return the facts for a single host"""
+    host = find_host(hostid)
+
+    page = get_page_num()
+    per_page = get_per_page()
+
+    start = (page - 1) * per_page
+    end = page * per_page
+
+    resp = {
+        'total': len(host['facts']),
+        'subtotal': 1,  # this appears to always be 1 in the API
+        'page': page,
+        'per_page': per_page,
+        'sort': {
+            'by': None,
+            'order': None,
+        },
+        'results': {
+            host['name']: dict(sorted(host['facts'].items())[start:end]),
+        },
+    }
+
+    return jsonify(resp)
 
 
 @app.route('/ping')
